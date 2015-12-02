@@ -3,7 +3,7 @@ import collections
 """
 poemCharacter takes a poem (as a string) and its author.
 It outputs a vector of characteristics for that poem.
-"""
+""" 
 
 # Task: Ignore uppercase
 # Task: Treat multiple spaces in a row as one space
