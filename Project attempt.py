@@ -27,11 +27,12 @@ def styleTrainer():
             authorVectors[author]['linesPerPoem']   = collections.Counter()
             authorVectors[author]['typeTokenCount'] = collections.Counter()
             authorVectors[author]['wordDomain']     = collections.Counter()
+            authorVectors[author]['poemStart']      = collections.Counter()
 
             # go through all of poems
             for index in range(len(data[author])):
                 # get stats on the poem
-                poemVector = characterUtil.poemCharacter(data[author][index],True)
+                poemVector = characterUtil.poemCharacter(data[author][index])
 			
                 # first half is for training
                 if index < halfPoems:
@@ -41,11 +42,12 @@ def styleTrainer():
                     authorVectors[author]['avgWordLength'] += poemVector['avgWordLength']
                     authorVectors[author]['avgLineLength'] += poemVector['avgLineLength']
                     authorVectors[author]['rhymePercent'] += poemVector['rhymePercent']
-                    authorVectors[author]['wordPairs'].update(poemVector[wordPairs]
+                    authorVectors[author]['wordPairs'].update(poemVector[wordPairs])
                     authorVectors[author]['wordsPerLine'].update(poemVector[wordsPerLine])
                     authorVectors[author]['linesPerPoem'].update(poemVector[linesPerPoem])
                     authorVectors[author]['typeTokenCount'].update(poemVector[typeTokenCount])
                     authorVectors[author]['wordDomain'].update(poemVector[wordDomain])
+                    authorVectors[author]['poemStart'].update(poemVector[poemStart])
                     
 
                 # second half goes into testing data

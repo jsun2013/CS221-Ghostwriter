@@ -8,6 +8,7 @@ It outputs a vector of characteristics for that poem.
 # Notes:
 # 1. We could probably calculate word_domain from wordPairs, numLines from word_line_dist, etc., but it doesn't make a difference.
 # 2. Should we use a type-token ratio instead?
+# 3. What does poem_start keep track of? Words that start a poem or start a new line?
 
 def poemCharacter(poemTuple):
     author = poemTuple[0]
@@ -24,6 +25,7 @@ def poemCharacter(poemTuple):
     ### GENERATION CHARACTERISTICS ###
     word_line_dist    = collections.Counter()
     word_domain       = collections.Counter()
+    poem_start        = collections.Counter()
     type_token_count  = 0
     ### FOR FUTURE USE ###
     
@@ -56,7 +58,7 @@ def poemCharacter(poemTuple):
                 # if end_word is the end of a line, and at least two letters long, record its last two letters for rhyme checking
                 if ind != len(end_words) - 1:
                     if len(end_word) > 1:
-                        lineEnd.append[end_word[-2:]]
+                        lineEnd.append(end_word[-2:])
 
                 word_domain[end_word] += 1
                 if len(prev_word) > 0:
@@ -68,6 +70,7 @@ def poemCharacter(poemTuple):
             word_domain[word] += 1
             if len(prev_word) > 0:
                 wordPairs[(prev_word, word)] += 1
+            # Should there be an else for poem_start here?
             prev_word = word
     word_line_dist[word_line] += 1 # for the last line which has no newline character
     type_token_count = len(word_domain)
@@ -100,6 +103,6 @@ def poemCharacter(poemTuple):
     poemVector['wordsPerLine'] = word_line_dist # GENERATION: Distribution counter of how many times a certain number of words is used in one line
     poemVector['typeTokenCount'] = type_token_count # GENERATION: How many unique words are used (length of word domain)
     poemVector['wordDomain'] = word_domain # GENERATION: Counter of how many times a word is used
-    
+    poemVector['poemStart'] = poem_start # GENERATION: Counter of how many times a word is used to start a poem
     
     return poemVector
