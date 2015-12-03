@@ -37,19 +37,20 @@ def styleTrainer():
                 if index < halfPoems:
                     trainingSet.append(data[author][index])
                     # add those stats to the author
-                    authorVectors[author]['numLines'] += poemVector[0]['numLines']
-                    authorVectors[author]['avgWordLength'] += poemVector[0]['avgWordLength']
-                    authorVectors[author]['avgLineLength'] += poemVector[0]['avgLineLength']
-                    authorVectors[author]['rhymePercent'] += poemVector[0]['rhymePercent']
-                    authorVectors[author]['wordsPerLine'].update(   poemVector[0][wordsPerLine])
-                    authorVectors[author]['linesPerPoem'].update(   poemVector[0][linesPerPoem])
-                    authorVectors[author]['typeTokenCount'].update( poemVector[0][typeTokenCount])
-                    authorVectors[author]['wordDomain'].update(     poemVector[0][wordDomain])
-#                    authorVectors[author]['wordPairs'] += poemVector[1]
+                    authorVectors[author]['numLines'] += poemVector['numLines']
+                    authorVectors[author]['avgWordLength'] += poemVector['avgWordLength']
+                    authorVectors[author]['avgLineLength'] += poemVector['avgLineLength']
+                    authorVectors[author]['rhymePercent'] += poemVector['rhymePercent']
+                    authorVectors[author]['wordPairs'].update(poemVector[wordPairs]
+                    authorVectors[author]['wordsPerLine'].update(poemVector[wordsPerLine])
+                    authorVectors[author]['linesPerPoem'].update(poemVector[linesPerPoem])
+                    authorVectors[author]['typeTokenCount'].update(poemVector[typeTokenCount])
+                    authorVectors[author]['wordDomain'].update(poemVector[wordDomain])
+                    
 
                 # second half goes into testing data
                 else:
-                    testVectors.append(poemVector[0]) # no need for word pairs, which is only for generating poems
+                    testVectors.append(poemVector)
                     testingSet.append(data[author][index])
     
 

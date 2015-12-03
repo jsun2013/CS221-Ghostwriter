@@ -96,9 +96,10 @@ def poemCharacter(poemTuple):
     poemVector['avgWordLength'] = avgWordLength # CHARACTERISTIC: Average length of words in poem
     poemVector['avgLineLength'] = avgLineLength # CHARACTERISTIC: Average length of line in poem
     poemVector['rhymePercent'] = rhymePercent # CHARACTERISTIC: Percentage of lines that rhyme
+    poemVector['wordPairs'] = wordPairs # GENERATION: Counter of how many times a pair of words is used in a row
     poemVector['wordsPerLine'] = word_line_dist # GENERATION: Distribution counter of how many times a certain number of words is used in one line
     poemVector['typeTokenCount'] = type_token_count # GENERATION: How many unique words are used (length of word domain)
     poemVector['wordDomain'] = word_domain # GENERATION: Counter of how many times a word is used
-    poemVector['wordPairs'] = wordPairs # GENERATION: Counter of how many times a pair of words is used in a row
+    
     
     return poemVector
