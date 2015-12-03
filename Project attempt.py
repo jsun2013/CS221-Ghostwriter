@@ -21,7 +21,8 @@ def styleTrainer():
             authorVectors[author]['numLines'] = 0.0
             authorVectors[author]['avgWordLength'] = 0.0
             authorVectors[author]['avgLineLength'] = 0.0
-            authorVectors[author]['rhymePercent'] = 0.0
+            authorVectors[author]['rhymePercentAA'] = 0.0
+            authorVectors[author]['rhymePercentABA'] = 0.0
             authorVectors[author]['wordPairs'] = collections.Counter()
             authorVectors[author]['wordsPerLine']   = collections.Counter()
             authorVectors[author]['linesPerPoem']   = collections.Counter()
@@ -41,13 +42,14 @@ def styleTrainer():
                     authorVectors[author]['numLines'] += poemVector['numLines']
                     authorVectors[author]['avgWordLength'] += poemVector['avgWordLength']
                     authorVectors[author]['avgLineLength'] += poemVector['avgLineLength']
-                    authorVectors[author]['rhymePercent'] += poemVector['rhymePercent']
-                    authorVectors[author]['wordPairs'].update(poemVector[wordPairs])
-                    authorVectors[author]['wordsPerLine'].update(poemVector[wordsPerLine])
-                    authorVectors[author]['linesPerPoem'].update(poemVector[linesPerPoem])
-                    authorVectors[author]['typeTokenCount'].update(poemVector[typeTokenCount])
-                    authorVectors[author]['wordDomain'].update(poemVector[wordDomain])
-                    authorVectors[author]['poemStart'].update(poemVector[poemStart])
+                    authorVectors[author]['rhymePercentAA'] += poemVector['rhymePercentAA']
+                    authorVectors[author]['rhymePercentABA'] += poemVector['rhymePercentABA']
+                    authorVectors[author]['wordPairs'].update(poemVector['wordPairs'])
+                    authorVectors[author]['wordsPerLine'].update(poemVector['wordsPerLine'])
+                    authorVectors[author]['linesPerPoem'][poemVector['numLines']] += 1
+                    authorVectors[author]['typeTokenCount'][poemVector['typeTokenCount']] += 1
+                    authorVectors[author]['wordDomain'].update(poemVector['wordDomain'])
+                    authorVectors[author]['poemStart'].update(poemVector['poemStart'])
                     
 
                 # second half goes into testing data
@@ -56,12 +58,12 @@ def styleTrainer():
                     testingSet.append(data[author][index])
     
 
-
-		# get averages
-		authorVectors[author]['numLines'] = authorVectors[author]['numLines']/halfPoems
-		authorVectors[author]['avgWordLength'] = authorVectors[author]['avgWordLength']/halfPoems
-		authorVectors[author]['avgLineLength'] = authorVectors[author]['avgLineLength']/halfPoems
-		authorVectors[author]['rhymePercent'] = authorVectors[author]['rhymePercent']/halfPoems
+    		# get averages
+    		authorVectors[author]['numLines'] = authorVectors[author]['numLines']/halfPoems
+    		authorVectors[author]['avgWordLength'] = authorVectors[author]['avgWordLength']/halfPoems
+    		authorVectors[author]['avgLineLength'] = authorVectors[author]['avgLineLength']/halfPoems
+    		authorVectors[author]['rhymePercentAA'] = authorVectors[author]['rhymePercentAA']/halfPoems
+            authorVectors[author]['rhymePercentABA'] = authorVectors[author]['rhymePercentABA']/halfPoems
 
     return authorVectors, testVectors, trainingSet, testingSet
     
@@ -74,7 +76,8 @@ def getFeatureVector(authorVector, poem):
     phi['numLines'] = abs(poemVector['numLines']-authorVector['numLines'])
     phi['avgWordLength'] = abs(poemVector['avgWordLength']-authorVector['avgWordLength'])
     phi['avgLineLength'] = abs(poemVector['avgLineLength']-authorVector['avgLineLength'])
-    phi['rhymePercent'] = abs(poemVector['rhymePercent']-authorVector['rhymePercent'])
+    phi['rhymePercentAA'] = abs(poemVector['rhymePercentAA']-authorVector['rhymePercentAA'])
+    phi['rhymePercentABA'] = abs(poemVector['rhymePercentABA']-authorVector['rhymePercentABA'])
     return phi
     
 def classifyPoems(authorVectors, testVectors, weights):

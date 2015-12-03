@@ -19,7 +19,8 @@ def poemCharacter(poemTuple):
     numWords = 0 # total number of words
     numLines = 0 # total number of lines
     lineEnd = [] # keeps track for rhyming
-    rhymes = 0 # number of lines that rhyme
+    rhymesAA = 0 # number of lines that rhyme
+    rhymesABA = 0
     wordPairs = collections.Counter() # keeps track of how many times a word comes after another
     
     ### GENERATION CHARACTERISTICS ###
@@ -75,22 +76,19 @@ def poemCharacter(poemTuple):
     word_line_dist[word_line] += 1 # for the last line which has no newline character
     type_token_count = len(word_domain)
 
-    # Rhyme counting
-    for ind in range(len(lineEnd)):
-        # if last line
-        if ind == len(lineEnd)-1:
-            if (lineEnd[ind] == lineEnd[ind-1]) | (lineEnd[ind] == lineEnd[ind-2]):
-                rhymes += 1
-        # if second-to-last line
-        elif ind == len(lineEnd)-2:
-            if (lineEnd[ind]==lineEnd[ind+1]) | (lineEnd[ind] == lineEnd[ind-1]) | (lineEnd[ind] == lineEnd[ind-2]):
-                rhymes += 1
-        # ordinarily check 1 and 2 lines ahead and 1 and 2 lines behind
-        else:
-            if (lineEnd[ind] == lineEnd[ind+1]) | (lineEnd[ind] == lineEnd[ind+2]) | (lineEnd[ind] == lineEnd[ind-1]) | (lineEnd[ind] == lineEnd[ind-2]):
-                rhymes += 1
+    # AA Rhyme Counting - start from second line
+    for ind in range(1,len(lineEnd)):
+        if lineEnd[ind] == lineEnd[ind-1]:
+            rhymesAA += 1
 
-    rhymePercent = float(rhymes)/numLines
+    # ABA Rhyme Counting - start from third line
+    for ind in range(2,len(lineEnd)):
+        if lineEnd[ind] == lineEnd[ind-2]:
+            rhymesABA += 1
+
+
+    rhymePercentAA = float(rhymesAA)/numLines
+    rhymePercentABA = float(rhymesABA)/numLines
     avgWordLength = float(numLetters)/numWords
     avgLineLength = float(numWords)/numLines
 
@@ -98,7 +96,8 @@ def poemCharacter(poemTuple):
     poemVector['numLines'] = numLines # CHARACTERISTIC: Total number of lines in poem
     poemVector['avgWordLength'] = avgWordLength # CHARACTERISTIC: Average length of words in poem
     poemVector['avgLineLength'] = avgLineLength # CHARACTERISTIC: Average length of line in poem
-    poemVector['rhymePercent'] = rhymePercent # CHARACTERISTIC: Percentage of lines that rhyme
+    poemVector['rhymePercentAA'] = rhymePercentAA # CHARACTERISTIC: Percentage of lines that rhyme with a line one before
+    poemVector['rhymePercentABA'] = rhymePercentABA # CHARACTERISTIC: Percentage of lines that rhyme with a line two before
     poemVector['wordPairs'] = wordPairs # GENERATION: Counter of how many times a pair of words is used in a row
     poemVector['wordsPerLine'] = word_line_dist # GENERATION: Distribution counter of how many times a certain number of words is used in one line
     poemVector['typeTokenCount'] = type_token_count # GENERATION: How many unique words are used (length of word domain)
