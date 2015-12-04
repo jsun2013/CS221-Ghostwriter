@@ -1,12 +1,12 @@
-#import classifier
+import poemClassification
 import util
 import random
 
 class poet:
-    def __init__(self, name="", line_dict={}, word_dict={}, token_dict={}, domain=[]):
+    def __init__(self, name="", line_dict={}, wordDomain={}, token_dict={}, domain=[]):
         self.name = name
         self.line_dict = line_dict
-        self.word_dict = word_dict
+        self.wordDomain = wordDomain
         self.token_dict = token_dict
         self.domain = domain
 
@@ -14,7 +14,7 @@ class poem(util.CSP):
     def __init__(self, poet):
         util.CSP.__init__(self)
         self.line_num = util.weightedRandomChoice(poet.line_dict)
-        self.word_dict = poet.word_dict
+        self.wordDomain = poet.wordDomain
         self.token_num = util.weightedRandomChoice(poet.token_dict)
         self.domain = random.sample(poet.domain, self.token_num)
         
@@ -33,7 +33,7 @@ class generator:
         @PARAM poet: String containing poet's name
     """
     def add_poet(self, poet):
-        # TBD
+        # I'm not sure that this is necessary. Instead, run the style trainer.
         pass
         
     """
@@ -57,14 +57,15 @@ class generator:
     """
     def generate_poem(self, poet):
         if poet not in self.poets:
-            self.add_poet(poet)
+            authorVectors, testVectors, trainingSet, testingSet = poemClassification.styleTrainer()
+            self.poets = authorVectors
             
         new_poem = poem(self.poets[poet])
         word_num = 0
         for line_id in xrange(new_poem.line_num):
             # Generating random number of words per line
             prev_word_num = word_num
-            word_num = self.token_num = util.weightedRandomChoice(new_poem.word_dict)
+            word_num = self.token_num = util.weightedRandomChoice(new_poem.wordDomain)
             self.generate_line(new_poem, line_id, word_num)
             
             # Adding transition binary factors between lines

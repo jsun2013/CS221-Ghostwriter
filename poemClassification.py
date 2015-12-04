@@ -1,4 +1,4 @@
-import characterUtil
+import poemFeatures
 import readUtil
 import collections
 
@@ -33,7 +33,7 @@ def styleTrainer():
             # go through all of poems
             for index in range(len(data[author])):
                 # get stats on the poem
-                poemVector = characterUtil.poemCharacter(data[author][index])
+                poemVector = poemFeatures.poemCharacter(data[author][index])
 			
                 # first half is for training
                 if index < halfPoems:
@@ -72,7 +72,7 @@ def getFeatureVector(authorVector, poem):
     # for this poem. This will mainly take the L1 norm between the poem characteristics
     # and the author characteristics
     phi = {}
-    poemVector = characterUtil.poemCharacter(("",poem)) # Don't need author name or word pairs
+    poemVector = poemFeatures.poemCharacter(("",poem)) # Don't need author name or word pairs
     phi['numLines'] = abs(poemVector['numLines']-authorVector['numLines'])
     phi['avgWordLength'] = abs(poemVector['avgWordLength']-authorVector['avgWordLength'])
     phi['avgLineLength'] = abs(poemVector['avgLineLength']-authorVector['avgLineLength'])
@@ -210,38 +210,5 @@ def getBinarySet(trainingSet, author):
         else:            
             outputSet.append((poem,-1))
     return outputSet
-            
 
-
-###############################################################################
-# Main
-
-authorVectors, testVectors, trainingSet, testingSet = styleTrainer()
-authorWeights = {}
-for author in authorVectors.keys():
-    binaryTrainingSet = getBinarySet(trainingSet,author)
-    binaryTestingSet = getBinarySet(testingSet,author)
-    
-    authorWeights[author] = learnPredictor(binaryTrainingSet,binaryTestingSet,getFeatureVector,authorVectors[author])    
-
-errors = {'Coleridge':0,'Frost':0,'Kerouac':0,'Seuss':0,'Dante':0}
-count = {'Coleridge':0.0,'Frost':0.0,'Kerouac':0.0,'Seuss':0.0,'Dante':0}
-for (correctAuthor,poem) in testingSet:
-    count[correctAuthor]+=1
-    bestScore = 0
-    bestAuthor = None
-    for curAuthor in authorVectors.keys():
-        phi = getFeatureVector(authorVectors[curAuthor],poem)
-        w = authorWeights[curAuthor]
-        score = dotProduct(phi,w)
-        if score>bestScore:
-            bestScore = score
-            bestAuthor = curAuthor
-    
-    # Done with computing scores
-    if bestAuthor != correctAuthor:
-        errors[correctAuthor] += 1
-
-for author in errors.keys():
-    errors[author] = errors[author]/count[author]
 
