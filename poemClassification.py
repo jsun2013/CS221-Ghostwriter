@@ -58,12 +58,12 @@ def styleTrainer():
                     testingSet.append(data[author][index])
     
 
-    		# get averages
-    		authorVectors[author]['numLines'] = authorVectors[author]['numLines']/halfPoems
-    		authorVectors[author]['avgWordLength'] = authorVectors[author]['avgWordLength']/halfPoems
-    		authorVectors[author]['avgLineLength'] = authorVectors[author]['avgLineLength']/halfPoems
-    		authorVectors[author]['rhymePercentAA'] = authorVectors[author]['rhymePercentAA']/halfPoems
-            authorVectors[author]['rhymePercentABA'] = authorVectors[author]['rhymePercentABA']/halfPoems
+    # get averages
+    authorVectors[author]['numLines'] = authorVectors[author]['numLines']/halfPoems
+    authorVectors[author]['avgWordLength'] = authorVectors[author]['avgWordLength']/halfPoems
+    authorVectors[author]['avgLineLength'] = authorVectors[author]['avgLineLength']/halfPoems
+    authorVectors[author]['rhymePercentAA'] = authorVectors[author]['rhymePercentAA']/halfPoems
+    authorVectors[author]['rhymePercentABA'] = authorVectors[author]['rhymePercentABA']/halfPoems
 
     return authorVectors, testVectors, trainingSet, testingSet
     
