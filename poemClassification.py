@@ -14,56 +14,59 @@ def styleTrainer():
 
 	# go through each author in data
     for author in data.keys():
-            # initialize values for that author... could be simplified by making a vector class...
-            halfPoems = len(data[author])/2
-            authorVectors[author] = {}
-            authorVectors[author]['author'] = author
-            authorVectors[author]['numLines'] = 0.0
-            authorVectors[author]['avgWordLength'] = 0.0
-            authorVectors[author]['avgLineLength'] = 0.0
-            authorVectors[author]['rhymePercentAA'] = 0.0
-            authorVectors[author]['rhymePercentABA'] = 0.0
-            authorVectors[author]['wordPairs'] = collections.Counter()
-            authorVectors[author]['wordsPerLine']   = collections.Counter()
-            authorVectors[author]['linesPerPoem']   = collections.Counter()
-            authorVectors[author]['typeTokenCount'] = collections.Counter()
-            authorVectors[author]['wordDomain']     = collections.Counter()
-            authorVectors[author]['poemStart']      = collections.Counter()
+        # initialize values for that author... could be simplified by making a vector class...
+        if author == 'Seuss':
+            a = 2;
+        
+        halfPoems = len(data[author])/2
+        authorVectors[author] = {}
+        authorVectors[author]['author'] = author
+        authorVectors[author]['numLines'] = 0.0
+        authorVectors[author]['avgWordLength'] = 0.0
+        authorVectors[author]['avgLineLength'] = 0.0
+        authorVectors[author]['rhymePercentAA'] = 0.0
+        authorVectors[author]['rhymePercentABA'] = 0.0
+        authorVectors[author]['wordPairs'] = collections.Counter()
+        authorVectors[author]['wordsPerLine']   = collections.Counter()
+        authorVectors[author]['linesPerPoem']   = collections.Counter()
+        authorVectors[author]['typeTokenCount'] = collections.Counter()
+        authorVectors[author]['wordDomain']     = collections.Counter()
+        authorVectors[author]['poemStart']      = collections.Counter()
 
-            # go through all of poems
-            for index in range(len(data[author])):
-                # get stats on the poem
-                poemVector = poemFeatures.poemCharacter(data[author][index])
+        # go through all of poems
+        for index in range(len(data[author])):
+            # get stats on the poem
+            poemVector = poemFeatures.poemCharacter(data[author][index])
 			
-                # first half is for training
-                if index < halfPoems:
-                    trainingSet.append(data[author][index])
-                    # add those stats to the author
-                    authorVectors[author]['numLines'] += poemVector['numLines']
-                    authorVectors[author]['avgWordLength'] += poemVector['avgWordLength']
-                    authorVectors[author]['avgLineLength'] += poemVector['avgLineLength']
-                    authorVectors[author]['rhymePercentAA'] += poemVector['rhymePercentAA']
-                    authorVectors[author]['rhymePercentABA'] += poemVector['rhymePercentABA']
-                    authorVectors[author]['wordPairs'].update(poemVector['wordPairs'])
-                    authorVectors[author]['wordsPerLine'].update(poemVector['wordsPerLine'])
-                    authorVectors[author]['linesPerPoem'][poemVector['numLines']] += 1
-                    authorVectors[author]['typeTokenCount'][poemVector['typeTokenCount']] += 1
-                    authorVectors[author]['wordDomain'].update(poemVector['wordDomain'])
-                    authorVectors[author]['poemStart'].update(poemVector['poemStart'])
-                    
+            # first half is for training
+            if index < halfPoems:
+                trainingSet.append(data[author][index])
+                # add those stats to the author
+                authorVectors[author]['numLines'] += poemVector['numLines']
+                authorVectors[author]['avgWordLength'] += poemVector['avgWordLength']
+                authorVectors[author]['avgLineLength'] += poemVector['avgLineLength']
+                authorVectors[author]['rhymePercentAA'] += poemVector['rhymePercentAA']
+                authorVectors[author]['rhymePercentABA'] += poemVector['rhymePercentABA']
+                authorVectors[author]['wordPairs'].update(poemVector['wordPairs'])
+                authorVectors[author]['wordsPerLine'].update(poemVector['wordsPerLine'])
+                authorVectors[author]['linesPerPoem'][poemVector['numLines']] += 1
+                authorVectors[author]['typeTokenCount'][poemVector['typeTokenCount']] += 1
+                authorVectors[author]['wordDomain'].update(poemVector['wordDomain'])
+                authorVectors[author]['poemStart'].update(poemVector['poemStart'])
+                
 
-                # second half goes into testing data
-                else:
-                    testVectors.append(poemVector)
-                    testingSet.append(data[author][index])
+            # second half goes into testing data
+            else:
+                testVectors.append(poemVector)
+                testingSet.append(data[author][index])
     
 
-    # get averages
-    authorVectors[author]['numLines'] = authorVectors[author]['numLines']/halfPoems
-    authorVectors[author]['avgWordLength'] = authorVectors[author]['avgWordLength']/halfPoems
-    authorVectors[author]['avgLineLength'] = authorVectors[author]['avgLineLength']/halfPoems
-    authorVectors[author]['rhymePercentAA'] = authorVectors[author]['rhymePercentAA']/halfPoems
-    authorVectors[author]['rhymePercentABA'] = authorVectors[author]['rhymePercentABA']/halfPoems
+        # get averages
+        authorVectors[author]['numLines'] = authorVectors[author]['numLines']/halfPoems
+        authorVectors[author]['avgWordLength'] = authorVectors[author]['avgWordLength']/halfPoems
+        authorVectors[author]['avgLineLength'] = authorVectors[author]['avgLineLength']/halfPoems
+        authorVectors[author]['rhymePercentAA'] = authorVectors[author]['rhymePercentAA']/halfPoems
+        authorVectors[author]['rhymePercentABA'] = authorVectors[author]['rhymePercentABA']/halfPoems
 
     return authorVectors, testVectors, trainingSet, testingSet
     
