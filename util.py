@@ -124,6 +124,33 @@ class CSP:
                     assert i in currentTable and j in currentTable[i]
                     currentTable[i][j] *= table[i][j]
 
+def get_delta_weight(csp, assignment, var, val):
+    """
+    Given a CSP, a partial assignment, and a proposed new value for a variable,
+    return the change of weights after assigning the variable with the proposed
+    value.
+
+    @param assignment: A dictionary of current assignment. Unassigned variables
+        do not have entries, while an assigned variable has the assigned value
+        as value in dictionary. e.g. if the domain of the variable A is [5,6],
+        and 6 was assigned to it, then assignment[A] == 6.
+    @param var: name of an unassigned variable.
+    @param val: the proposed value.
+
+    @return w: Change in weights as a result of the proposed assignment. This
+        will be used as a multiplier on the current weight.
+    """
+    assert var not in assignment
+    w = 1.0
+    if csp.unaryFactors[var]:
+        w *= csp.unaryFactors[var][val]
+        if w == 0: return w
+    for var2, factor in csp.binaryFactors[var].iteritems():
+        if var2 not in assignment: continue  # Not assigned yet
+        w *= factor[val][assignment[var2]]
+        if w == 0: return w
+    return w
+
 def weightedRandomChoice(weightDict):
     weights = []
     elems = []
