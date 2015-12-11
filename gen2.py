@@ -192,6 +192,12 @@ class generator:
             #Adding beginning/ending unary factors
             #poem.add_unary_factor((line_id, 0), lambda x: True)
             #poem.add_unary_factor((line_id, word_num-1), lambda x: True)
+
+            def disallow_repeats(val):
+                distr = {}
+                for word in new_poem.domain:
+                    distr[word] = 1 if word != val else 0
+                return distr
             
             # Adding transition binary factors between lines
             if line_id > 0:
@@ -200,6 +206,11 @@ class generator:
 #                    lambda x,y: author['wordPairs'][(x,y)])
                     lambda prev: new_poem.prev_distribution[prev],
                     lambda curr: new_poem.post_distribution[curr])
+                # Don't let words be repeated for now
+                new_poem.add_binary_factor((line_id, 0), (line_id-1, prev_word_num-1), \
+#                    lambda x,y: author['wordPairs'][(x,y)])
+                    disallow_repeats,
+                    disallow_repeats)
             prev_word_num = new_poem.word_num[line_id]
 
         poem_assignment = self.gibbs(new_poem)
@@ -360,16 +371,6 @@ def poem_weighted_random_choice(poem, var, assignment):
             
             
             new_val = util.weightedRandomChoice(probability)
-            # Make sure the new value isn't the same as a neighbor
-            redo_counter = 5
-            while new_val in [assignment[neighbor] \
-                            for neighbor,_ in poem.neighborFactors[var]]:
-                if redo_counter <= 0:
-                    # Give up and just take random choice
-                    new_val = random.choice(poem.domain.keys())
-                else:
-                    new_val = util.weightedRandomChoice(probability)
-                redo_counter -= 1            
             return new_val 
         
 def normalize_distribution(distribution):
