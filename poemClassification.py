@@ -15,9 +15,6 @@ def styleTrainer():
 	# go through each author in data
     for author in data.keys():
         # initialize values for that author... could be simplified by making a vector class...
-        if author == 'Seuss':
-            a = 2;
-        
         halfPoems = len(data[author])/2
         authorVectors[author] = {}
         authorVectors[author]['author'] = author
@@ -70,7 +67,8 @@ def styleTrainer():
 
     return authorVectors, testVectors, trainingSet, testingSet
     
-def getFeatureVector(authorVector, poem):
+def getFeatureVectorOLD(authorVector, poem):
+    # DEPRECATED
     # Takes in an author vector and a poem string. extracts the feature vector 
     # for this poem. This will mainly take the L1 norm between the poem characteristics
     # and the author characteristics
@@ -83,8 +81,22 @@ def getFeatureVector(authorVector, poem):
     phi['rhymePercentABA'] = abs(poemVector['rhymePercentABA']-authorVector['rhymePercentABA'])
     return phi
     
+def getFeatureVector(poem):
+    # Takes in an author vector and a poem string. extracts the feature vector 
+    # for this poem. This will mainly take the L1 norm between the poem characteristics
+    # and the author characteristics
+    phi = {}
+    poemVector = poemFeatures.poemCharacter(("",poem)) # Don't need author name or word pairs
+    phi['numLines'] = abs(poemVector['numLines'])
+    phi['avgWordLength'] = abs(poemVector['avgWordLength'])
+    phi['avgLineLength'] = abs(poemVector['avgLineLength'])
+    phi['rhymePercentAA'] = abs(poemVector['rhymePercentAA'])
+    phi['rhymePercentABA'] = abs(poemVector['rhymePercentABA'])
+    return phi
+    
 def classifyPoems(authorVectors, testVectors, weights):
-
+    
+      #Initialization  
 	correct = {}
 	counter = {}
 	for author in authorVectors:
@@ -92,7 +104,6 @@ def classifyPoems(authorVectors, testVectors, weights):
 		counter[author] = 0
 
 	for poemVector in testVectors:
-
 		diffVectors = {}
 		differences = {}
 
@@ -135,6 +146,74 @@ def predictor(x,weights):
         out = 1
     
     return out
+def poetPredictor(x,weights):
+    maxScore = -float('Inf');
+    for author in weights.keys():
+        score = dotProduct(x,weights[author])
+        if score > maxScore:
+            maxScore = score
+            maxAuthor = author
+    return maxAuthor
+    
+def learnMultiPredictor(trainExamples, testExamples, featureExtractor, authorVectors):
+    '''
+    For Multiclass Classification. Given |trainExamples| and |testExamples| (each one is a list of (poem,poet)
+    pairs), a |featureExtractor| to apply to x, and the number of iterations to
+    train |numIters|, return the weight vectors (sparse feature vector) learned 
+    using SGD.
+    '''
+    weights = {}  # feature => weight
+    for author in authorVectors:
+        weights[author] = {}
+        
+    
+    def hingeLoss(phi,y,w):
+        return max(0, 1-marginMulti(phi,w,y))
+        
+    def marginMulti(phi,weights,y):
+        # Take in the feature vector, all of the weight vectors, and the correct label
+        # Return the margin
+        w_y = weights[y]
+        y_score = dotProduct(phi,w_y)
+        competitor_score = max([dotProduct(phi,weights[x]) for x in weights.keys() if x != y])
+        return y_score - competitor_score
+        
+    def updateWeights(phi, y, weights, eta):
+        # Updates weights through stochastic gradient descent
+        # Loss = max(w_y' phi - w_y phi + 1[y'!=y])
+        # Gradient = 0 if w_y' does not max the expression
+        max_exp = 0;
+        for author in weights:
+            step = 1 if author != y else 0
+            exp = dotProduct(weights[author],phi) - dotProduct(weights[y],phi) + step 
+            if exp > max_exp:
+                max_exp = exp
+                max_author = author
+                
+        # Now update and return                
+        margin = marginMulti(phi,weights, y)
+        if margin < 1:
+            increment(weights[max_author],-eta,phi)
+            increment(weights[y],eta,phi)
+        
+    def predictorHelper(x):
+        return poetPredictor(featureExtractor(x),weights)   
+
+    eta = 0.1 # step size
+    numIters = 20
+    for num in range(numIters):
+        for x,y in trainExamples:
+            phi = featureExtractor(x)
+            for feature in phi:
+                # Check if feature is in the weight vectors by checking for the first author
+                if feature not in weights[ weights.keys()[1] ]:
+                    for author in weights.keys():
+                        weights[author][feature] = 0
+                        
+            #Update weights
+            updateWeights(phi,y,weights,eta)    
+        print "Iter: %1d Train Error: %0.3f        Test Error: %0.3f" % (num, evaluatePredictor(trainExamples, predictorHelper), evaluatePredictor(testExamples, predictorHelper))
+    return weights    
 
 def learnPredictor(trainExamples, testExamples, featureExtractor, authorVector):
     '''
@@ -146,7 +225,17 @@ def learnPredictor(trainExamples, testExamples, featureExtractor, authorVector):
     weights = {}  # feature => weight
     
     def hingeLoss(phi,y,w):
-        return max(0, 1-dotProduct(phi,w)*y)
+        return max(0, 1-margin(phi,w,y))
+        
+    def margin(phi,w,y):
+        return dotProduct(phi,w)*y
+        
+    def marginMulti(phi,weights,y):
+        # Take in the feature vector, all of the weight vectors, and the correct label
+        w_y = weights[y]
+        y_score = dotProduct(phi,w_y)
+        competitor_score = max([dotProduct(phi,weights[x]) for x in weights.keys() if x != y])
+        return y_score - competitor_score
         
     def gradientHingeLoss(phi, y, w):
         out = {}
@@ -158,8 +247,8 @@ def learnPredictor(trainExamples, testExamples, featureExtractor, authorVector):
     def predictorHelper(x):
         return predictor(featureExtractor(authorVector,x),weights)     
 
-    eta = 0.05 # step size
-    numIters = 15
+    eta = 0.1 # step size
+    numIters = 20
     for num in range(numIters):
         for x,y in trainExamples:
             phi = featureExtractor(authorVector,x)
@@ -212,6 +301,14 @@ def getBinarySet(trainingSet, author):
             outputSet.append((poem,1))
         else:            
             outputSet.append((poem,-1))
+    return outputSet
+    
+def getLabeledSet(trainingSet):
+    # Returns a list of training set for each author such that the authors are
+    # the second element of the poem
+    outputSet = []
+    for cur_author,poem in trainingSet:            
+        outputSet.append((poem,cur_author))
     return outputSet
 
 

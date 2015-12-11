@@ -6,10 +6,14 @@ from gen import *
 authorVectors, testVectors, trainingSet, testingSet = styleTrainer()
 authorWeights = {}
 for author in authorVectors.keys():
-    binaryTrainingSet = getBinarySet(trainingSet,author)
-    binaryTestingSet = getBinarySet(testingSet,author)
-    
-    authorWeights[author] = learnPredictor(binaryTrainingSet,binaryTestingSet,getFeatureVector,authorVectors[author])    
+#    binaryTrainingSet = getBinarySet(trainingSet,author)
+#    binaryTestingSet = getBinarySet(testingSet,author)
+
+    #Create labeled trainingset
+    labeledTrainingSet = getLabeledSet(trainingSet)
+    labeledTestingSet = getLabeledSet(testingSet)
+    weight = learnMultiPredictor(labeledTrainingSet,labeledTestingSet,getFeatureVector,authorVectors);
+    authorWeights = weight
 
 # Test weights
 errors = {'Coleridge':0,'Frost':0,'Kerouac':0,'Seuss':0,'Dante':0}
@@ -19,7 +23,7 @@ for (correctAuthor,poem) in testingSet:
     bestScore = 0
     bestAuthor = None
     for curAuthor in authorVectors.keys():
-        phi = getFeatureVector(authorVectors[curAuthor],poem)
+        phi = getFeatureVector(poem)
         w = authorWeights[curAuthor]
         score = dotProduct(phi,w)
         if score>bestScore:
