@@ -153,28 +153,7 @@ def get_delta_weight(csp, assignment, var, val):
         if var2 not in assignment: continue  # Not assigned yet
         w *= factor[val][assignment[var2]]
         if w == 0: return w
-    return w
-    
-def csp_weighted_random_choice(csp, var, assignment):
-        """
-        Given a |csp|, a variable |var|, and a current |assignment|,
-        Returns a new assignment for |var| based on a weighted random choice 
-        given the neighboring variable assignments
-        """
-        weights = collections.defaultdict(lambda: 0) # no smoothing
-        for neighbor in csp.get_neighbor_vars(var):
-            neighbor_val = assignment[neighbor]
-            # Just set the weights as the distribution of the first factor
-            if len(weights.keys()) == 0:
-                for possibility in csp.values[var]:
-                    prob = csp.binaryFactors[neighbor][var][neighbor_val][possibility]
-                    weights[possibility] = prob
-            else:
-                for possibility in csp.values[var]:
-                    prob = weights[possibility]*csp.binaryFactors[neighbor][var][neighbor_val][possibility]
-                    weights[possibility] = prob
-        
-        return weightedRandomChoice(weights)        
+    return w     
                     
 def weightedRandomChoice(weightDict):
     weights = []

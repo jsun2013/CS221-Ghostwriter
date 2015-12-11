@@ -2,6 +2,8 @@ import poemClassification
 import util
 import random
 import collections
+import sys
+import copy
 
 class poem(util.CSP):
     def __init__(self, author):
@@ -26,6 +28,12 @@ class poem(util.CSP):
         self.post_prob = {}
         self.smoothing = 1 # Laplacian smoothing for prev/post distributions
         
+        self.neighborFactors = {} # self.neighborFactors[var1] returns a list tuples. 
+                                    # The first element in the tuple is a neighbor variable.
+                                    # The second element is a factor function that returns
+                                    #  a distribution given the neighbor assignment.
+        
+        
         
         # Create the domain of our variables
         while(len(self.domain)<self.token_num):
@@ -44,7 +52,7 @@ class poem(util.CSP):
         # Create the prev/post dicts
         for word in self.domain:
             # Create the prev_dict
-            self.prev_distribution[word] = collections.defaultdict(lambda: self.smoothing)
+            self.prev_distribution[word] = collections.defaultdict(int)
             self.prev_prob[word] = collections.defaultdict(float)
             total_prev_pairs = 0
             total_post_pairs = 0
@@ -53,28 +61,43 @@ class poem(util.CSP):
                 if count > 0:
                     self.prev_distribution[word][next_word] = count
                     total_prev_pairs += count
-                else:
-                    self.prev_distribution[word][next_word] = 1
-                    total_prev_pairs += 1
                     
             # Create the post_dict
-            self.post_distribution[word] = collections.defaultdict(lambda: self.smoothing)
+            self.post_distribution[word] = collections.defaultdict(int)
             self.post_prob[word] = collections.defaultdict(float)
             for before_word in self.domain:
-                count = author['wordPairs'][(word, before_word)]
+                count = author['wordPairs'][(before_word, word)]
                 if  count > 0:
                     self.post_distribution[word][before_word] = count
                     total_post_pairs += count
-                else:
-                    self.post_distribution[word][before_word] = 1
-                    total_post_pairs += 1
                     
             # Normalize the distributions to make probabilities
             self.prev_prob[word].update((next_word, count/float(total_prev_pairs)) for next_word, count in self.prev_distribution[word].items())
             self.post_prob[word].update((before_word, count/float(total_post_pairs)) for before_word, count in self.post_distribution[word].items())
-        
     
-     
+    """
+    OVERRIDES csp.get_neighborFactors
+    """    
+    def get_neighborFactors(self, var):
+        """
+        Returns a list of variables which are neighbors of |var|.
+        """
+        return [neighbor for neighbor,_ in self.neighborFactors[var]]
+    
+    """
+    Overides csp.add_binary_factor
+    """
+    def add_binary_factor(self, var1, var2, factor_func1, factor_func2):
+#        util.CSP.add_binary_factor(self,var1,var2,factor_func1)
+
+        if var1 not in self.neighborFactors:
+            self.neighborFactors[var1] = [(var2, factor_func1)]
+        else:
+            self.neighborFactors[var1].append((var2, factor_func1))
+        if var2 not in self.neighborFactors:
+            self.neighborFactors[var2] = [(var1, factor_func1)]
+        else:
+            self.neighborFactors[var2].append((var1, factor_func1))
 #    
 #    
 #    """
@@ -164,7 +187,8 @@ class generator:
 #                    lambda x,y: author['wordPairs'][(x,y)])
                     #print "INFO: Adding factor between Word {} and Word {} in Line {})".format(word_id-1, word_id, line_id)
                     new_poem.add_binary_factor((line_id, word_id-1), (line_id, word_id), \
-                       lambda prev,curr: new_poem.prev_prob[prev][curr])
+                        lambda prev: new_poem.prev_distribution[prev],
+                        lambda curr: new_poem.post_distribution[curr])
             #Adding beginning/ending unary factors
             #poem.add_unary_factor((line_id, 0), lambda x: True)
             #poem.add_unary_factor((line_id, word_num-1), lambda x: True)
@@ -174,7 +198,8 @@ class generator:
             #print "INFO: Adding factor between (Line {}, Word {}) and (Line {}, Word {})".format(line_id, 0, line_id-1, prev_word_num-1)
                 new_poem.add_binary_factor((line_id, 0), (line_id-1, prev_word_num-1), \
 #                    lambda x,y: author['wordPairs'][(x,y)])
-                    lambda prev,curr: new_poem.prev_prob[prev][curr])
+                    lambda prev: new_poem.prev_distribution[prev],
+                    lambda curr: new_poem.post_distribution[curr])
             prev_word_num = new_poem.word_num[line_id]
 
         poem_assignment = self.gibbs(new_poem)
@@ -193,15 +218,17 @@ class generator:
         for variable in poem.variables:
             rand_word = random.choice(poem.domain.keys())
             assignment[variable] = rand_word
-            print rand_word
-
-        print "\n\n"
+#            print rand_word
+#
+#        print "\n\n"
         
+        print "Generating Poem...\n"
+        sys.stdout.flush()
         
 
         num_changes = epsilon+1
         loop_count  = 0
-        numIters = 10
+        numIters = 15
         # while num_changes > epsilon:
         while loop_count < numIters:
             num_changes = 0
@@ -210,12 +237,12 @@ class generator:
             
             for (line_id, word_id) in poem.variables:
                 variable = (line_id, word_id)
-                test = util.csp_weighted_random_choice(poem,variable,assignment)
+                test = poem_weighted_random_choice(poem,variable,assignment)
 
 #                #print "\n\n"
 #                #print "INFO: Sampling word {}".format(variable)
 #                #print "INFO: Current assignment is {}".format(assignment)
-#                context = poem.get_neighbor_vars(variable)
+#                context = poem.get_neighborFactors(variable)
 #                #print "\nINFO: Context for {}: {}".format((line_id, word_id), context)
 #
 #                # Finding previous word
@@ -285,4 +312,57 @@ class generator:
 
         return assignment
 
+def poem_weighted_random_choice(poem, var, assignment):
+        """
+        Given a |poem| csp, a word variable |var|, and a current |assignment|,
+        Returns a new assignment for |var| based on a weighted random choice 
+        given the neighboring variable assignments
+        """
+        distributions = [] 
+        probability = {}
+        poss_words = set()
+        
+        # Assemble the distributions with smoothing
+        for neighbor, factor_func in poem.neighborFactors[var]:
+            neighbor_val = assignment[neighbor]
+            cur_distribution = copy.deepcopy(factor_func(neighbor_val))
+            distributions.append(cur_distribution)
             
+            #Take union of the words
+            poss_words = poss_words | set(cur_distribution.keys())
+        
+        # There us a chance we will have no possible words. In this case, just 
+        # reseed everything so we take a random choice
+        if not poss_words:
+            return random.choice(poem.domain.keys())
+        else:
+            # Perform smoothing
+            for distribution in distributions:           
+                # Perform Smoothing on the two distributions based on the union
+                for possibility in poss_words:
+                    if distribution[possibility] == 0:
+                        distribution[possibility] = 1
+                    else:
+                        distribution[possibility] += 1
+           
+            # Create the joint probability distr by converting the distributions to
+            # probabilities and elem-wise multiplication. Don't need to deepcopy again
+            for distribution in distributions:
+               normalize_distribution(distribution)
+               if not probability:
+                   probability = distribution
+               else:
+                   for elem in probability.keys():
+                       probability[elem] *= distribution[elem]
+           
+            # Renormalize probabilities and then call weighted random choice
+            normalize_distribution(probability)
+            return util.weightedRandomChoice(probability)    
+        
+def normalize_distribution(distribution):
+    """
+    Normalizes a |distribution| dict to be a probability distribution
+    """
+    totalSum = sum(distribution.itervalues())
+    distribution.update((key, val/float(totalSum)) for key, val in distribution.items())
+        
