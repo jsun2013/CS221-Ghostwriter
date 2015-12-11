@@ -44,7 +44,8 @@ def poemCharacter(poemTuple):
     for word in poem.split(' '):
         word_line += 1
         numLetters += len(word)
-
+        word = word.lower()
+        
         # word with newline character is really end of previous line and beginning of next line
         # add the length of the ending line to the distribution and check line ending for rhyming
         if '\n' in word:

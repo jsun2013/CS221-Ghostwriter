@@ -357,7 +357,20 @@ def poem_weighted_random_choice(poem, var, assignment):
            
             # Renormalize probabilities and then call weighted random choice
             normalize_distribution(probability)
-            return util.weightedRandomChoice(probability)    
+            
+            
+            new_val = util.weightedRandomChoice(probability)
+            # Make sure the new value isn't the same as a neighbor
+            redo_counter = 5
+            while new_val in [assignment[neighbor] \
+                            for neighbor,_ in poem.neighborFactors[var]]:
+                if redo_counter <= 0:
+                    # Give up and just take random choice
+                    new_val = random.choice(poem.domain.keys())
+                else:
+                    new_val = util.weightedRandomChoice(probability)
+                redo_counter -= 1            
+            return new_val 
         
 def normalize_distribution(distribution):
     """
