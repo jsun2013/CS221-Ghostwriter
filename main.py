@@ -1,9 +1,10 @@
 from poemClassification import *
-from gen import *
+from gen2 import *
 
 
 # Learn weights for each author
 authorVectors, testVectors, trainingSet, testingSet = styleTrainer()
+"""
 authorWeights = {}
 for author in authorVectors.keys():
     binaryTrainingSet = getBinarySet(trainingSet,author)
@@ -32,8 +33,8 @@ for (correctAuthor,poem) in testingSet:
 
 for author in errors.keys():
     errors[author] = errors[author]/count[author]
+"""
 
-"""
-newPoem = generator()
-newPoem.generate_poem('Seuss')
-"""
+test = generator()
+test.add_authors(authorVectors)
+test.generate_poem('Dante')

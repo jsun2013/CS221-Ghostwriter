@@ -8,7 +8,7 @@ class poem(util.CSP):
         util.CSP.__init__(self)
         self.author = author['author']
         # self.token_num = util.weightedRandomChoice(author['typeTokenCount'])
-        self.token_num = 30
+        self.token_num = 70
         self.line_num = util.weightedRandomChoice(author['linesPerPoem'])
         self.word_num = {}
         self.domain = {}
@@ -28,12 +28,6 @@ class generator:
         # Dictionary of authors
         self.authors = {}
         
-        # Dictionary of poems
-        self.poems = {}
-        
-        # Poem classifier
-        self.classifier = {}
-        
     """
         @PARAM author: String containing author's name
     """
@@ -50,8 +44,6 @@ class generator:
             print "ERROR: Invalid author ({})".format(author_name)
             return
         
-        
-
         author = self.authors[author_name]
         new_poem = poem(author)
         word_num = 0
@@ -82,109 +74,104 @@ class generator:
         poem_assignment = self.gibbs(new_poem)
 
         for line in range(new_poem.line_num):
+            string = str()
             for word in range(new_poem.word_num[line]):
-                print poem_assignment[(line,word)]
+                string += poem_assignment[(line,word)] + ' '
+            print string
         
     def gibbs(self, poem):
         assignment = {}
-        epsilon = 10
+        epsilon = 5
         
         # Assigns unweighted random words to each variable
         for variable in poem.variables:
-            rand_word = random.choice(poem.values[variable].keys())
+            rand_word = random.choice(poem.domain.keys())
             assignment[variable] = rand_word
+            print rand_word
+
+        print "\n\n"
         
         
 
         num_changes = epsilon+1
         loop_count  = 0
-        while num_changes > epsilon:
+        # while num_changes > epsilon:
+        while loop_count < 10:
             num_changes = 0
             loop_count += 1
-            print "INFO: Gibbs Sampling, Loop {}".format(loop_count)
+            #print "INFO: Gibbs Sampling, Loop {}".format(loop_count)
             
             for (line_id, word_id) in poem.variables:
                 variable = (line_id, word_id)
-                print "\n\n"
-                print "INFO: Sampling word {}".format(variable)
-                print "INFO: Current assignment is {}".format(assignment)
+
+                #print "\n\n"
+                #print "INFO: Sampling word {}".format(variable)
+                #print "INFO: Current assignment is {}".format(assignment)
                 context = poem.get_neighbor_vars(variable)
                 #print "\nINFO: Context for {}: {}".format((line_id, word_id), context)
-                
+
                 # Finding previous word
                 prev = zip(*context)
 
-                prev_assignment = {}
                 if (line_id, word_id-1) in context:
-                    prev = (line_id, word_id-1)
+                    prev_var = (line_id, word_id-1)
                 elif line_id-1 in prev[0]:
-                    prev = context[prev[0].index(line_id-1)]
-
-
-                # Previous word exists
-                if type(prev) is tuple:
-                    #print "INFO: Previous variable is {}".format(prev)
-                    prev_assignment = {}
-                    # Generating counter of previous word tuples
-                    for word_pair, count in self.authors[poem.author]['wordPairs'].items():
-                        if word_pair[0] == assignment[prev]:
-                            if variable in assignment:
-                                del assignment[variable]
-
-                            if word_pair[1] in poem.domain:
-                                prev_assignment[word_pair[1]] = util.get_delta_weight(poem, assignment, variable, word_pair[1])
-                                # FIXME: Smoothing??
-                                prev_assignment[word_pair[1]] += 1
+                    prev_var = context[prev[0].index(line_id-1)]
+                else:
+                    prev_var = None
 
                 
-                # If previous assignment successful, then do Gibbs Sampling
-                if len(prev_assignment) == 1:
-                    assignment[variable] = prev_assignment.keys()[0]
-                    continue
-                elif len(prev_assignment) > 1:
-                    new_word = util.weightedRandomChoice(prev_assignment)
-                    assignment[variable] = new_word
-                    print new_word
-                    num_changes += 1
-                    continue
-
-                # If no preceding word found, then find succeeding word
-                succ = None
-                succ_assignment = {}
                 if (line_id, word_id+1) in context:
-                    succ = (line_id, word_id+1)
+                    next_var = (line_id, word_id+1)
                 elif (line_id+1, 0)  in context:
-                    succ = (line_id+1, 0)
+                    next_var = (line_id+1, 0)
+                else:
+                    next_var = None
 
-                # Succeeding word exists
-                if type(succ) is tuple:
-                    #print "INFO: Succeeding variable is {}".format(succ)
-                    # Generating counter of previous word tuples
-                    for word_pair, count in self.authors[poem.author]['wordPairs'].items():
-                        if word_pair[1] == assignment[succ]:
-                            if variable in assignment:
-                                del assignment[variable]
 
-                            if word_pair[0] in poem.domain:
+                # try each word from our local domain as this variable
+                prev_pairs = {}
+                total_prev_pairs = 0
+                next_pairs = {}
+                total_next_pairs = 0
+                assignment_values = {}
 
-                                succ_assignment[word_pair[0]] = util.get_delta_weight(poem, assignment, variable, word_pair[0])
-                                # FIXME: Smoothing??
-                                succ_assignment[word_pair[0]] += 1
+                # Try each word against its preceding and following word
+                for word in poem.domain:
+
+                    if prev_var != None:
+                        count = self.authors[poem.author]['wordPairs'][(assignment[prev_var],word)]
+                        if count > 0:
+                            prev_pairs[word] = count + 1 # with smoothing
+                            total_prev_pairs += count + 1 
+
+                    if next_var != None:
+                        count = self.authors[poem.author]['wordPairs'][(word, assignment[next_var])]
+                        if  count > 0:
+                            next_pairs[word] = count + 1
+                            total_next_pairs += count + 1
+
+                # combine keys
+                for word in next_pairs:
+                    if word not in prev_pairs:
+                        prev_pairs[word] = 1
+                        total_prev_pairs += 1
+                for word in prev_pairs:
+                    if word not in next_pairs:
+                        next_pairs[word] = 1
+                        total_next_pairs += 1
+
+
+                # normalize and multiply
+                for word in prev_pairs:
+                    assignment_values[word] = (float(prev_pairs[word])/total_prev_pairs) * (float(next_pairs[word])/total_next_pairs)
                 
-                # If previous assignment successful, then do Gibbs Sampling
-                if len(succ_assignment) == 1:
-                    assignment[variable] = succ_assignment.keys()[0]
-                    continue
-                elif len(succ_assignment) > 1:
-                    new_word = util.weightedRandomChoice(succ_assignment)
-                    assignment[variable] = new_word
-                    print new_word
-                    num_changes += 1
-                    continue
+                if assignment_values:
+                    word_choice = util.weightedRandomChoice(assignment_values)
+                else:
+                    word_choice = random.choice(poem.domain.keys())
 
-                # If no preceding or succeeding word found, then choose random word
-                new_word = util.weightedRandomChoice(poem.values[variable])
-                assignment[variable] = new_word
+                assignment[variable] = word_choice
                 num_changes += 1
 
         return assignment
