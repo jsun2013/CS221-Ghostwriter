@@ -1,4 +1,5 @@
 import random
+import collections
 
 # General code for representing a weighted CSP (Constraint Satisfaction Problem).
 # All variables are being referenced by their index instead of their original
@@ -96,7 +97,7 @@ class CSP:
         except:
             print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
             print '!! Tip:                                                                       !!'
-            print '!! You are adding a binary factor over a same variable...                  !!'
+            print '!! You are adding a binary factor over the same variable...                   !!'
             print '!! Please check your code and avoid doing this.                               !!'
             print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
             raise
@@ -123,6 +124,9 @@ class CSP:
                 for j in table[i]:
                     assert i in currentTable and j in currentTable[i]
                     currentTable[i][j] *= table[i][j]
+                    
+    
+        
 
 def get_delta_weight(csp, assignment, var, val):
     """
@@ -150,7 +154,28 @@ def get_delta_weight(csp, assignment, var, val):
         w *= factor[val][assignment[var2]]
         if w == 0: return w
     return w
-
+    
+def csp_weighted_random_choice(csp, var, assignment):
+        """
+        Given a |csp|, a variable |var|, and a current |assignment|,
+        Returns a new assignment for |var| based on a weighted random choice 
+        given the neighboring variable assignments
+        """
+        weights = collections.defaultdict(lambda: 0) # no smoothing
+        for neighbor in csp.get_neighbor_vars(var):
+            neighbor_val = assignment[neighbor]
+            # Just set the weights as the distribution of the first factor
+            if len(weights.keys()) == 0:
+                for possibility in csp.values[var]:
+                    prob = csp.binaryFactors[neighbor][var][neighbor_val][possibility]
+                    weights[possibility] = prob
+            else:
+                for possibility in csp.values[var]:
+                    prob = weights[possibility]*csp.binaryFactors[neighbor][var][neighbor_val][possibility]
+                    weights[possibility] = prob
+        
+        return weightedRandomChoice(weights)        
+                    
 def weightedRandomChoice(weightDict):
     weights = []
     elems = []
