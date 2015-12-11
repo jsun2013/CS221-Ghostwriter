@@ -11,17 +11,52 @@ class poem(util.CSP):
         self.token_num = 70
         self.line_num = util.weightedRandomChoice(author['linesPerPoem'])
         self.word_num = {}
-        self.domain = {}
+        self.domain = {} # Domain of our word variables
+        # Next two are dict of dicts. The top level dict is keyed by every word
+        # in our reduced domain. Each of these is then a dict that is again  
+        # keyed by the entire reduced domain, with value = probability that
+        # a word appears before/after the top level key.
+        self.prev_dict = {} # Gives probability that the outer key comes before the inner key
+        self.post_dict = {} # Gives probability that the outer key comes after the inner key
         
+        # Create the domain of our variables
         while(len(self.domain)<self.token_num):
             add_word = util.weightedRandomChoice(author['wordDomain'])
             if add_word != '' and add_word not in self.domain:
                 self.domain[add_word] = author['wordDomain'][add_word]
         
-
+        # Randomly select the number of words per line
         for line_id in xrange(self.line_num):
             word_num = util.weightedRandomChoice(author['wordsPerLine'])
             self.word_num[line_id] = word_num
+#            # Add each variable as (line, word_id)
+#            for word_id in xrange(word_num):
+#                self.add_variable((line_id, word_id), self.domain)
+            
+        # Create the prev/post dicts
+        for word in self.domain:
+            # Create the prev_dict
+            self.prev_dict[word] = collections.defaultdict(str)
+            total_prev_pairs = 0
+            total_post_pairs = 0
+            for next_word in self.domain:
+                count = author['wordPairs'][word,next_word]
+                if count > 0:
+                    self.prev_dict[word][next_word] = count
+                    total_prev_pairs += count
+                    
+            # Create the post_dict
+            self.post_dict[word] = collections.defaultdict(str)
+            for before_word in self.domain:
+                count = author['wordPairs'][(word, before_word)]
+                if  count > 0:
+                    self.post_dict[word][before_word] = count
+                    total_post_pairs += count
+            # Normalize the dicts to make probabilities
+            self.prev_dict[word].update((next_word, prob/float(total_prev_pairs)) for next_word, prob in self.prev_dict[word].items())
+            self.post_dict[word].update((before_word, prob/float(total_post_pairs)) for before_word, prob in self.post_dict[word].items())
+        
+                
         
 class generator:
     def __init__(self):
@@ -47,6 +82,27 @@ class generator:
         author = self.authors[author_name]
         new_poem = poem(author)
         word_num = 0
+        
+        '''
+            Adds a factor that returns a probability that the current word 
+            appears given the previous word. Does not perform smoothing within
+            the factor, but the smoothing can be applied within the CSP
+        '''
+#        def before_factor(prev_word, curr_word):
+#
+#            for word in poem.domain:
+#                if prev_var != None:
+#                    count = self.authors[poem.author]['wordPairs'][(assignment[prev_var],word)]
+#                    if count > 0:
+#                        prev_pairs[word] = count + 1 # with smoothing
+#                        total_prev_pairs += count + 1 
+#
+#                if next_var != None:
+#                    count = self.authors[poem.author]['wordPairs'][(word, assignment[next_var])]
+#                    if  count > 0:
+#                        next_pairs[word] = count + 1
+#                        total_next_pairs += count + 1
+            
 
         for line_id in xrange(new_poem.line_num):
             word_num = new_poem.word_num[line_id]
@@ -59,14 +115,16 @@ class generator:
                     #print "INFO: Adding factor between Word {} and Word {} in Line {})".format(word_id-1, word_id, line_id)
                     new_poem.add_binary_factor((line_id, word_id-1), (line_id, word_id), \
                     lambda x,y: author['wordPairs'][(x,y)])
-            
+                    #print "INFO: Adding factor between Word {} and Word {} in Line {})".format(word_id-1, word_id, line_id)
+#                    new_poem.add_binary_factor((line_id, word_id-1), (line_id, word_id), \
+#                       lambda prev,curr: new_poem.prev_dict[prev][curr])
             #Adding beginning/ending unary factors
             #poem.add_unary_factor((line_id, 0), lambda x: True)
             #poem.add_unary_factor((line_id, word_num-1), lambda x: True)
             
             # Adding transition binary factors between lines
             if line_id > 0:
-                #print "INFO: Adding factor between (Line {}, Word {}) and (Line {}, Word {})".format(line_id, 0, line_id-1, prev_word_num-1)
+            #print "INFO: Adding factor between (Line {}, Word {}) and (Line {}, Word {})".format(line_id, 0, line_id-1, prev_word_num-1)
                 new_poem.add_binary_factor((line_id, 0), (line_id-1, prev_word_num-1), \
                     lambda x,y: author['wordPairs'][(x,y)])
             prev_word_num = new_poem.word_num[line_id]

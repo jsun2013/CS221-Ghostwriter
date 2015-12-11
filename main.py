@@ -41,4 +41,4 @@ for author in errors.keys():
 
 test = generator()
 test.add_authors(authorVectors)
-test.generate_poem('Dante')
+test.generate_poem('Kerouac')
