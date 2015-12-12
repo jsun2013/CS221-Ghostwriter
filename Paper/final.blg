@@ -1,0 +1,24 @@
+This is BibTeX, Version 0.99dThe top-level auxiliary file: final.aux
+The style file: IEEEtran.bst
+Database file #1: final.bib
+I was expecting a `,' or a `}'---line 23 of file final.bib
+ :     
+ :     month         = oct,
+(Error may have been on previous line)
+I'm skipping whatever remains of this entry
+I was expecting a `,' or a `}'---line 30 of file final.bib
+ :     title         = "
+ :                      A Comparison of Methods for Multi-class Support Vector Machines",
+I'm skipping whatever remains of this entry
+-- IEEEtran.bst version 1.14 (2015/08/26) by Michael Shell.
+-- http://www.michaelshell.org/tex/ieeetran/bibtex/
+-- See the "IEEEtran_bst_HOWTO.pdf" manual for usage information.
+Warning--empty journal in Dodge:article_typical
+Warning--empty journal in Rolfo:article_typical
+Warning--empty year in Konstas:article_typical
+Warning--empty title in Hsu:article_typical
+Warning--empty journal in Hsu:article_typical
+Warning--empty year in Hsu:article_typical
+
+Done.
+(There were 2 error messages)
